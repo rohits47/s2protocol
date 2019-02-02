@@ -30,26 +30,31 @@ class EventFilter(object):
 
 class JSONOutputFilter(EventFilter):
     """ Added as a filter will format the event into JSON """
+
     def __init__(self, output):
         self._output = output
 
     def process(self, event):
-        print >> self._output, json.dumps(event, encoding='ISO-8859-1', ensure_ascii=True, indent=4)
+        print >> self._output, json.dumps(
+            event, encoding='ISO-8859-1', ensure_ascii=True, indent=4)
         return event
 
 
 class NDJSONOutputFilter(EventFilter):
     """ Added as a filter will format the event into NDJSON """
+
     def __init__(self, output):
         self._output = output
 
     def process(self, event):
-        print >> self._output, json.dumps(event, encoding='ISO-8859-1', ensure_ascii=True)
+        print >> self._output, json.dumps(
+            event, encoding='ISO-8859-1', ensure_ascii=True)
         return event
 
 
 class PrettyPrintFilter(EventFilter):
     """ Add as a filter will send objects to stdout """
+
     def __init__(self, output):
         self._output = output
 
@@ -60,6 +65,7 @@ class PrettyPrintFilter(EventFilter):
 
 class TypeDumpFilter(EventFilter):
     """ Add as a filter to convert events into type information """
+
     def process(self, event):
         def recurse_into(value):
             if type(value) is list:
@@ -74,10 +80,11 @@ class TypeDumpFilter(EventFilter):
                 return decoded
             return (type(value).__name__, value)
         return recurse_into(event)
-    
+
 
 class StatCollectionFilter(EventFilter):
     """ Add as a filter to collect stats on events """
+
     def __init__(self):
         self._event_stats = {}
 
@@ -114,17 +121,17 @@ def cache_handle_uri(handle):
     Convert a 'cache handle' from a binary string to a string URI
     """
     handle_hex = binascii.b2a_hex(handle)
-    purpose = convert_fourcc(handle_hex[0:8]) # first 4 bytes
-    region = convert_fourcc(handle_hex[8:16]) # next 4 bytes
+    purpose = convert_fourcc(handle_hex[0:8])  # first 4 bytes
+    region = convert_fourcc(handle_hex[8:16])  # next 4 bytes
     content_hash = handle_hex[16:]
-  
+
     uri = ''.join([
         'http://',
         region.lower(),
         '.depot.battle.net:1119/',
         content_hash.lower(), '.',
         purpose.lower()
-      ])
+    ])
     return uri
 
 
@@ -160,17 +167,17 @@ def process_scope_attributes(all_scopes, event_fn):
 
     # Each scope represents a slot in the lobby
     for scope, scope_dict in all_scopes.iteritems():
-        scope_doc = { 'scope': scope }
+        scope_doc = {'scope': scope}
         # Convert all other attributes to symbolic representation
         for attr_id, val_dict in scope_dict.iteritems():
-            val = val_dict[0]['value'] 
+            val = val_dict[0]['value']
             attr_name = attr_id_to_name.get(attr_id, None)
             if attr_name is not None:
                 scope_doc[attr_name] = val
             else:
                 scope_doc['unknown_{}'.format(attr_id)] = val
 
-        # Pass the scope doc as a new event 
+        # Pass the scope doc as a new event
         event_fn(scope_doc)
 
 
@@ -266,7 +273,7 @@ def main():
         sys.exit(1)
 
     archive = mpyq.MPQArchive(args.replay_file)
-    
+
     filters = []
 
     if args.json:
@@ -285,7 +292,7 @@ def main():
     def process_event(event):
         for f in filters:
             event = f.process(event)
-        
+
     # Read the protocol header, this can be read with any protocol
     contents = archive.header['user_data_header']['content']
     header = versions.latest().decode_replay_header(contents)
@@ -297,7 +304,8 @@ def main():
     try:
         protocol = versions.build(baseBuild)
     except Exception, e:
-        print >> sys.stderr, 'Unsupported base build: {0} ({1})'.format(baseBuild, str(e))
+        print >> sys.stderr, 'Unsupported base build: {0} ({1})'.format(
+            baseBuild, str(e))
         sys.exit(1)
 
     # Process game metadata
@@ -350,13 +358,12 @@ def main():
         # Process raw attribute events structure
         if args.attributeevents:
             process_event(attributes)
-        
+
         # Convert attributes to higher level requested data, will
         # call prcess_event for each new event that it creates
         if args.attributeparse:
             process_scope_attributes(attributes['scopes'], process_event)
-            
-        
+
     for f in filters:
         f.finish()
 
@@ -369,6 +376,7 @@ def main():
         ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
         ps.print_stats()
         print s.getvalue()
+
 
 if __name__ == '__main__':
     main()
